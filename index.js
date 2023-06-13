@@ -218,26 +218,14 @@ const pkg = getPackageJson();
     // fix #166 - npm workspaces
     // https://github.com/phips28/gh-action-bump-version/issues/166#issuecomment-1142640018
     newVersion = newVersion.split(/\n/)[1] || newVersion;
-    console.log('newVersion 2:', newVersion);
-    newVersion = `${tagPrefix}${newVersion}${tagSuffix}`;
-    console.log(`newVersion after merging tagPrefix+newVersion+tagSuffix: ${newVersion}`);
+    const newTag = `${tagPrefix}${newVersion}${tagSuffix}`;
     // Using sh as command instead of directly echo to be able to use file redirection
-    await runInWorkspace('sh', ['-c', `echo "newTag=${newVersion}" >> $GITHUB_OUTPUT`]);
-    try {
-      // to support "actions/checkout@v1"
-      if (process.env['INPUT_SKIP-COMMIT'] !== 'true') {
-        await runInWorkspace('git', ['commit', '-a', '-m', commitMessage.replace(/{{version}}/g, newVersion)]);
-      }
-    } catch (e) {
-      console.warn(
-        'git commit failed because you are using "actions/checkout@v2" or later; ' +
-        'but that doesnt matter because you dont need that git commit, thats only for "actions/checkout@v1"',
-      );
-    }
+    await runInWorkspace('sh', ['-c', `echo "newTag=${newTag}" >> $GITHUB_OUTPUT`]);
+    await runInWorkspace('sh', ['-c', `echo "newVersion=${newVersion}" >> $GITHUB_OUTPUT`]);
 
     const remoteRepo = `https://${process.env.GITHUB_ACTOR}:${process.env.GITHUB_TOKEN}@github.com/${process.env.GITHUB_REPOSITORY}.git`;
     if (process.env['INPUT_SKIP-TAG'] !== 'true') {
-      await runInWorkspace('git', ['tag', newVersion]);
+      await runInWorkspace('git', ['tag', newTag]);
       if (process.env['INPUT_SKIP-PUSH'] !== 'true') {
         await runInWorkspace('git', ['push', remoteRepo, '--follow-tags']);
         await runInWorkspace('git', ['push', remoteRepo, '--tags']);
